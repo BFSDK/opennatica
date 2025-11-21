@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Opennatica - Карта аномалий</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Manifest для PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Opennatica">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #2a2a2a;
+            --bg-overlay: rgba(49, 49, 49, 0.8);
+            --text-primary: #f0f0f0;
+            --text-secondary: #b0b0b0;
+            --accent: #5d6afb;
+            --accent-hover: #4a59e8;
+            --success: #00c897;
+            --warning: #ffa726;
+            --error: #ff5252;
+            --user-location: #2196f3;
+            --anomaly: #ff5252;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-weight: 400;
+        }
+        
+        #header {
+            background: var(--bg-overlay);
+            backdrop-filter: blur(10px);
+            color: var(--text-primary);
+            padding: 10px 16px;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            position: relative;
+            transition: all 1s cubic-bezier(0.08, 0.92, 0.08, 0.92);
+            height: 50px;
+        }
+        
+        #header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+        }
+        
+        #header-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        #tracking-status {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--warning);
+            font-size: 12px;
+            background: rgba(255, 167, 38, 0.1);
+            padding: 4px 10px;
+            border-radius: 0;
+            font-weight: 500;
+            transition: all 1s cubic-bezier(0.08, 0.92, 0.08, 0.92);
+        }
+        
+        #tracking-status.hidden {
+            display: none;
+        }
+        
+        #map {
+            flex: 1;
+            width: 100%;
+            z-index: 1;
+        }
+        
+        /* Стили для темной темы карты */
+        .dark-tile-layer {
+            filter: invert(1) hue-rotate(180deg) brightness(0.7) contrast(0.9);
+        }
+        
+        .btn {
+            padding: 8px;
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: none;
+            border-radius: 0;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 1s cubic-bezier(0.08, 0.92, 0.08, 0.92);
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            font-family: 'Segoe UI', sans-serif;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn:hover {
+            background-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(93, 106, 251, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            background-color: var(--bg-tertiary);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .toggle-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: none;
+            border-radius: 0;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 1s cubic-bezier(0.08, 0.92, 0.08, 0.92);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            font-family: 'Segoe UI', sans-serif;
+            width: 36px;
+            height: 36px;
+        }
+        
+        .toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+            background: var(--success);
+        }
+        
+        .toggle-btn:active {
+            transform: translateY(0);
+        }
+        
+        .toggle-btn.tracking {
+            background: var(--error);
+            box-shadow: 0 4px 12px rgba(255, 82, 82, 0.4);
+        }
+        
+        .toggle-btn.tracking:hover {
+            box-shadow: 0 6px 16px rgba(255, 82, 82, 0.5);
+        }
+        
+        .icon {
+            width: 20px;
+            height: 20px;
+        }
+        
+        #bottom-panel {
+            background: var(--bg-overlay);
+            backdrop-filter: blur(10px);
+            padding: 16px;
+            box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-shrink: 0;
+            transition: all 1s cubic-bezier(0.08, 0.92, 0.08, 0.92);
+        }
+        
+        #find-anomaly-btn {
+            padding: 14px 24px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: none;
+            border-radius: 0;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 1s cubic-bezier(0.08, 0.92, 0.08, 0.92);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+            flex: 1;
+            max-width: 300px;
+            letter-spacing: 0.2px;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        
+        #find-anomaly-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            background: var(--accent);
+        }
+        
+        #find-anomaly-btn:active {
+            transform: translateY(-1px);
+        }
+        
+        #found-anomaly-btn, #stop-anomaly-btn {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 0;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 1s cubic-bezier(0.08, 0.92, 0.08, 0.92);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            flex: 1;
+            max-width: 300px;
+            letter-spacing: 0.2px;
+            display: none;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        
+        #found-anomaly-btn {
+            background: var(--success);
+            box-shadow: 0 6px 20px rgba(0, 200, 151, 0.4);
+        }
+        
+        #found-anomaly-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 200, 151, 0.5);
+        }
+        
+        #stop-anomaly-btn {
+            background: var(--error);
+            box-shadow: 0 6px 20px rgba(255, 82, 82, 0.4);
+        }
+        
+        #stop-anomaly-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(255, 82, 82, 0.5);
+        }
+        
+        #found-anomaly-btn:active, #stop-anomaly-btn:active {
+            transform: translateY(-1px);
+        }
+        
+        /* Боковое меню */
+        #menu-btn {
+            background: var(--bg-tertiary);
+            border: none;
+            color: var(--text-primary);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 0;
+            transition: all 1s cubic-bezier(0.08, 0.92, 0.08, 0.92);
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        #menu-btn:hover {
+            background: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(93, 106, 251, 0.4);
+        }
+        
+        #side-menu {
+            position: fixed;
+            top: 0;
+            right: -320px;
+            width: 320px;
+            height: 100%;
+            background: var(--bg-overlay);
+            backdrop-filter: blur(10px);
+            box-shadow: -2px 0 20px rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            transition: all 1s cubic-bezier(0.08, 0.92, 0.08, 0.92);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        #side-menu.active {
+            right: 0;
+        }
+        
+        .menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--bg-tertiary);
+        }
+        
+        .menu-header h2 {
+            color: var(--text-primary);
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+        
+        .close-menu-btn {
+            background: var(--bg-tertiary);
+            border: none;
+            color: var(--text-secondary);
+            font-size: 22px;
+            cursor: pointer;
+            line-height: 1;
+            width: 36px;
+            height: 36px;
+            border-radius: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 1s cubic-bezier(0.08, 0.92, 0.08, 0.92);
+        }
+        
+        .close-menu-btn:hover {
+            background: var(--accent);
+            color: var(--text-primary);
+            transform: translateY(-2px);
+        }
+        
+        .menu-section {
+            margin-bottom: 25px;
+        }
+        
+        .menu-section h3 {
+            color: var(--text-primary);
+            font-size: 15px;
+            margin-bottom: 14px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--bg-tertiary);
+            font-weight: 600;
+            letter-spacing: 0.2px;
+        }
+        
+        .menu-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 14px 18px;
+            margin-bottom: 10px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: none;
+            border-radius: 0;
+            text-align: left;
+            cursor: pointer;
+            transition: all 1s cubic-bezier(0.08, 0.92, 0.08, 0.92);
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            font-family: 'Segoe UI', sans-serif;
+        }
+        
+        .menu-btn:hover {
+            background: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(93, 106, 251, 0.4);
+        }
+        
+        .menu-btn:active {
+            transform: translateY(0);
+        }
+        
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 0;
+            background: var(--error);
+            transition: all 1s cubic-bezier(0.08, 0.92, 0.08, 0.92);
+        }
+        
+        .status-indicator.active {
+            background: var(--success);
+        }
+        
+        /* Модальное окно */
+        #anomaly-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(10, 10, 10, 0.9);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            transition: all 1s cubic-bezier(0.08, 0.92, 0.08, 0.92);
+        }
+        
+        #anomaly-modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: var(--bg-overlay);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 0;
+            width: 90%;
+            max-width: 380px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+            border: 1px solid var(--bg-tertiary);
+            transition: all 1s cubic-bezier(0.08, 0.92, 0.08, 0.92);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--bg-tertiary);
+        }
+        
+        .modal-header h2 {
+            color: var(--text-primary);
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+        
+        .close-btn {
+            background: var(--bg-tertiary);
+            border: none;
+            color: var(--text-secondary);
+            font-size: 22px;
+            cursor: pointer;
+            line-height: 1;
+            width: 36px;
+            height: 36px;
+            border-radius: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 1s cubic-bezier(0.08, 0.92, 0.08, 0.92);
+        }
+        
+        .close-btn:hover {
+            background: var(--accent);
+            color: var(--text-primary);
+            transform: translateY(-2px);
+        }
+        
+        .modal-description {
+            color: var(--text-secondary);
+            margin-bottom: 22px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .radius-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 22px;
+        }
+        
+        .radius-option {
+            padding: 14px;
+            background: var(--bg-tertiary);
+            border: 2px solid transparent;
+            border-radius: 0;
+            text-align: center;
+            cursor: pointer;
+            transition: all 1s cubic-bezier(0.08, 0.92, 0.08, 0.92);
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .radius-option:hover {
+            background: var(--bg-primary);
+            transform: translateY(-2px);
+        }
+        
+        .radius-option.selected {
+            border-color: var(--accent);
+            background: var(--bg-primary);
+            box-shadow: 0 6px 16px rgba(93, 106, 251, 0.4);
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .modal-actions .btn {
+            flex: 1;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            width: auto;
+            height: auto;
+        }
+        
+        .cancel-btn {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        
+        .cancel-btn:hover {
+            background: var(--bg-primary);
+        }
+        
+        /* Стили для маркеров */
+        .pulse-marker {
+            border-radius: 0;
+            box-shadow: 0 0 0 rgba(0, 0, 0, 0.4);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 20px rgba(33, 150, 243, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(33, 150, 243, 0);
+            }
+        }
+        
+        .user-location-marker {
+            background: var(--user-location);
+            width: 22px;
+            height: 22px;
+            border: 3px solid white;
+        }
+        
+        .anomaly-pulse {
+            border-radius: 0;
+            box-shadow: 0 0 0 rgba(0, 0, 0, 0.4);
+            animation: anomaly-pulse 2s infinite;
+        }
+        
+        @keyframes anomaly-pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 20px rgba(255, 82, 82, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 82, 82, 0);
+            }
+        }
+        
+        .anomaly-marker {
+            background: var(--anomaly);
+            width: 22px;
+            height: 22px;
+            border: 3px solid white;
+        }
+        
+        /* Стили для установки приложения */
+        #install-btn {
+            display: none;
+        }
+        
+        #install-btn.available {
+            display: flex;
+        }
+        
+        .install-icon {
+            margin-right: 8px;
+            width: 16px;
+            height: 16px;
+            filter: invert(1);
+        }
+        
+        @media (max-width: 768px) {
+            #header {
+                padding: 8px 12px;
+                height: 46px;
+            }
+            
+            #header h1 {
+                font-size: 16px;
+            }
+            
+            #tracking-status {
+                font-size: 11px;
+                padding: 3px 8px;
+            }
+            
+            .btn, .toggle-btn {
+                width: 34px;
+                height: 34px;
+                padding: 7px;
+            }
+            
+            .icon {
+                width: 18px;
+                height: 18px;
+            }
+            
+            #bottom-panel {
+                padding: 14px;
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+            }
+            
+            #find-anomaly-btn, #found-anomaly-btn, #stop-anomaly-btn {
+                padding: 12px 20px;
+                font-size: 14px;
+                max-width: 100%;
+                width: 100%;
+            }
+            
+            #side-menu {
+                width: 100%;
+                right: -100%;
+            }
+            
+            .modal-content {
+                padding: 20px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            #header-controls {
+                gap: 6px;
+            }
+            
+            .radius-options {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <button id="menu-btn">☰</button>
+        <h1>Opennatica</h1>
+        <div id="header-controls">
+            <button id="refresh-btn" class="btn" title="Обновить местоположение">
+                <!-- Иконка обновления -->
+                <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4C7.58 4 4.01 7.58 4.01 12C4.01 16.42 7.58 20 12 20C15.73 20 18.84 17.45 19.73 14H17.65C16.83 16.33 14.61 18 12 18C8.69 18 6 15.31 6 12C6 8.69 8.69 6 12 6C13.66 6 15.14 6.69 16.22 7.78L13 11H20V4L17.65 6.35Z" fill="currentColor"/>
+                </svg>
+            </button>
+            <button id="tracking-btn" class="toggle-btn" title="Включить слежение">
+                <!-- Иконка слежения -->
+                <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 8C9.79 8 8 9.79 8 12C8 14.21 9.79 16 12 16C14.21 16 16 14.21 16 12C16 9.79 14.21 8 12 8ZM20.94 11C20.48 6.83 17.17 3.52 13 3.06V1H11V3.06C6.83 3.52 3.52 6.83 3.06 11H1V13H3.06C3.52 17.17 6.83 20.48 11 20.94V23H13V20.94C17.17 20.48 20.48 17.17 20.94 13H23V11H20.94ZM12 19C8.13 19 5 15.87 5 12C5 8.13 8.13 5 12 5C15.87 5 19 8.13 19 12C19 15.87 15.87 19 12 19Z" fill="currentColor"/>
+                </svg>
+            </button>
+        </div>
+        <div id="tracking-status" class="hidden">Включите слежение для обновления местоположения!</div>
+    </div>
+    
+    <div id="map"></div>
+    
+    <div id="bottom-panel">
+        <button id="find-anomaly-btn">Найти аномалию</button>
+        <button id="found-anomaly-btn">Нашёл</button>
+        <button id="stop-anomaly-btn">Остановить</button>
+    </div>
+    
+    <!-- Боковое меню -->
+    <div id="side-menu">
+        <div class="menu-header">
+            <h2>Меню</h2>
+            <button class="close-menu-btn">&times;</button>
+        </div>
+        
+        <div class="menu-section">
+            <h3>Управление</h3>
+            <button class="menu-btn" id="menu-tracking-btn">
+                <span>Слежение</span>
+                <div class="status-indicator"></div>
+            </button>
+            <button class="menu-btn" id="install-btn">
+                <span style="display: flex; align-items: center;">
+                    <svg class="install-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" fill="currentColor"/>
+                    </svg>
+                    Установить Opennatica
+                </span>
+            </button>
+            <button class="menu-btn" id="menu-about-btn">О приложении</button>
+        </div>
+    </div>
+    
+    <!-- Модальное окно выбора радиуса -->
+    <div id="anomaly-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Поиск аномалии</h2>
+                <button class="close-btn">&times;</button>
+            </div>
+            <p class="modal-description">Выберите радиус поиска аномалии:</p>
+            <div class="radius-options">
+                <div class="radius-option" data-radius="1000">1 км</div>
+                <div class="radius-option" data-radius="3000">3 км</div>
+                <div class="radius-option" data-radius="5000">5 км</div>
+                <div class="radius-option" data-radius="10000">10 км</div>
+            </div>
+            <div class="modal-actions">
+                <button id="cancel-btn" class="btn cancel-btn">Отмена</button>
+                <button id="start-anomaly-btn" class="btn">Старт</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Инициализация карты
+        const map = L.map('map').setView([0, 0], 2);
+        
+        // Добавление слоя карты с темной темой
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            className: 'dark-tile-layer'
+        }).addTo(map);
+        
+        // Переменные для управления
+        let locationMarker = null;
+        let locationCircle = null;
+        let watchId = null;
+        let isTracking = false;
+        let anomalyMarker = null;
+        let selectedRadius = 1000; // По умолчанию 1 км
+        let deferredPrompt = null;
+        
+        // Элементы управления
+        const refreshBtn = document.getElementById('refresh-btn');
+        const trackingBtn = document.getElementById('tracking-btn');
+        const trackingStatus = document.getElementById('tracking-status');
+        const findAnomalyBtn = document.getElementById('find-anomaly-btn');
+        const foundAnomalyBtn = document.getElementById('found-anomaly-btn');
+        const stopAnomalyBtn = document.getElementById('stop-anomaly-btn');
+        const anomalyModal = document.getElementById('anomaly-modal');
+        const closeModalBtn = document.querySelector('.close-btn');
+        const cancelBtn = document.getElementById('cancel-btn');
+        const startAnomalyBtn = document.getElementById('start-anomaly-btn');
+        const radiusOptions = document.querySelectorAll('.radius-option');
+        
+        // Элементы бокового меню
+        const menuBtn = document.getElementById('menu-btn');
+        const sideMenu = document.getElementById('side-menu');
+        const closeMenuBtn = document.querySelector('.close-menu-btn');
+        const menuTrackingBtn = document.getElementById('menu-tracking-btn');
+        const statusIndicator = document.querySelector('.status-indicator');
+        const installBtn = document.getElementById('install-btn');
+        const menuAboutBtn = document.getElementById('menu-about-btn');
+        
+        // PWA: Обработка установки приложения
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Предотвращаем автоматическое отображение подсказки
+            e.preventDefault();
+            // Сохраняем событие для использования позже
+            deferredPrompt = e;
+            // Показываем кнопку установки
+            installBtn.classList.add('available');
+        });
+        
+        // Обработчик нажатия на кнопку установки
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                // Показываем подсказку установки
+                deferredPrompt.prompt();
+                // Ждем ответа пользователя
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    console.log('Пользователь принял установку');
+                } else {
+                    console.log('Пользователь отклонил установку');
+                }
+                // Очищаем сохраненное событие
+                deferredPrompt = null;
+                // Скрываем кнопку установки
+                installBtn.classList.remove('available');
+                // Закрываем меню
+                sideMenu.classList.remove('active');
+            }
+        });
+        
+        // Скрываем кнопку установки после установки приложения
+        window.addEventListener('appinstalled', () => {
+            console.log('Приложение успешно установлено');
+            deferredPrompt = null;
+            installBtn.classList.remove('available');
+        });
+        
+        // Функция для обновления карты
+        function updateMap(lat, lng, accuracy) {
+            // Если маркер уже существует, удаляем его
+            if (locationMarker) {
+                map.removeLayer(locationMarker);
+            }
+            if (locationCircle) {
+                map.removeLayer(locationCircle);
+            }
+            
+            // Создание нового маркера пользователя в виде синей точки-аномалии
+            locationMarker = L.marker([lat, lng], {
+                icon: L.divIcon({
+                    className: 'pulse-marker user-location-marker',
+                    iconSize: [22, 22],
+                    iconAnchor: [11, 11]
+                })
+            }).addTo(map)
+            .bindPopup('Ваше местоположение')
+            .openPopup();
+            
+            // Создание круга точности
+            if (accuracy) {
+                locationCircle = L.circle([lat, lng], {
+                    color: '#2196f3',
+                    fillColor: '#2196f3',
+                    fillOpacity: 0.1,
+                    radius: accuracy
+                }).addTo(map);
+            }
+            
+            // Центрирование карты на текущем местоположении
+            map.setView([lat, lng], 16);
+        }
+        
+        // Функция для получения текущего местоположения
+        function getCurrentLocation() {
+            refreshBtn.disabled = true;
+            
+            if (!navigator.geolocation) {
+                refreshBtn.disabled = false;
+                return;
+            }
+            
+            navigator.geolocation.getCurrentPosition(
+                // Успешное получение местоположения
+                function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const accuracy = position.coords.accuracy;
+                    
+                    // Обновление карты
+                    updateMap(lat, lng, accuracy);
+                    
+                    refreshBtn.disabled = false;
+                },
+                // Ошибка при получении местоположения
+                function(error) {
+                    refreshBtn.disabled = false;
+                },
+                // Опции
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        }
+        
+        // Функция для запуска/остановки слежения
+        function toggleTracking() {
+            if (isTracking) {
+                // Останавливаем слежение
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+                trackingBtn.style.background = 'var(--bg-tertiary)';
+                trackingBtn.classList.remove('tracking');
+                statusIndicator.classList.remove('active');
+                trackingStatus.classList.remove('hidden');
+                isTracking = false;
+            } else {
+                // Запускаем слежение
+                if (!navigator.geolocation) {
+                    return;
+                }
+                
+                watchId = navigator.geolocation.watchPosition(
+                    function(position) {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        const accuracy = position.coords.accuracy;
+                        
+                        // Обновление карты
+                        updateMap(lat, lng, accuracy);
+                    },
+                    function(error) {
+                        toggleTracking(); // Останавливаем слежение при ошибке
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 1000
+                    }
+                );
+                
+                trackingBtn.style.background = 'var(--error)';
+                trackingBtn.classList.add('tracking');
+                statusIndicator.classList.add('active');
+                trackingStatus.classList.add('hidden');
+                isTracking = true;
+            }
+        }
+        
+        // Функция для генерации случайной точки в радиусе
+        function generateRandomPoint(centerLat, centerLng, radius) {
+            // Конвертируем радиус из метров в градусы (приблизительно)
+            const radiusInDegrees = radius / 111320;
+            
+            // Генерируем случайное расстояние и угол
+            const randomDistance = Math.sqrt(Math.random()) * radiusInDegrees;
+            const randomAngle = Math.random() * 2 * Math.PI;
+            
+            // Вычисляем новые координаты
+            const newLat = centerLat + randomDistance * Math.cos(randomAngle);
+            const newLng = centerLng + randomDistance * Math.sin(randomAngle) / Math.cos(centerLat * Math.PI / 180);
+            
+            return [newLat, newLng];
+        }
+        
+        // Функция для показа случайной аномалии
+        function showRandomAnomaly() {
+            if (!locationMarker) {
+                return;
+            }
+            
+            // Получаем текущие координаты
+            const currentLat = locationMarker.getLatLng().lat;
+            const currentLng = locationMarker.getLatLng().lng;
+            
+            // Генерируем случайную точку в выбранном радиусе
+            const anomalyCoords = generateRandomPoint(currentLat, currentLng, selectedRadius);
+            
+            // Удаляем предыдущую аномалию, если есть
+            if (anomalyMarker) {
+                map.removeLayer(anomalyMarker);
+            }
+            
+            // Создаем маркер аномалии
+            anomalyMarker = L.marker(anomalyCoords, {
+                icon: L.divIcon({
+                    className: 'anomaly-pulse anomaly-marker',
+                    iconSize: [22, 22],
+                    iconAnchor: [11, 11]
+                })
+            }).addTo(map)
+            .bindPopup(`<b>Аномалия обнаружена!</b><br>Расстояние: ${Math.round(calculateDistance(currentLat, currentLng, anomalyCoords[0], anomalyCoords[1]))} м`)
+            .openPopup();
+            
+            // Центрируем карту на аномалии
+            map.setView(anomalyCoords, 14);
+            
+            // Переключаем кнопки
+            findAnomalyBtn.style.display = 'none';
+            foundAnomalyBtn.style.display = 'block';
+            stopAnomalyBtn.style.display = 'block';
+        }
+        
+        // Функция для расчета расстояния между двумя точками (в метрах)
+        function calculateDistance(lat1, lng1, lat2, lng2) {
+            const R = 6371000; // Радиус Земли в метрах
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                Math.sin(dLng/2) * Math.sin(dLng/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+        
+        // Функция для запуска поиска аномалий
+        function startAnomalySearch() {
+            // Скрываем модальное окно
+            anomalyModal.classList.remove('active');
+            
+            // Показываем аномалию (только один раз)
+            showRandomAnomaly();
+        }
+        
+        // Функция для отметки найденной аномалии
+        function markAnomalyAsFound() {
+            if (!anomalyMarker || !locationMarker) return;
+            
+            // Удаляем маркер аномалии
+            map.removeLayer(anomalyMarker);
+            anomalyMarker = null;
+            
+            // Переключаем кнопки
+            findAnomalyBtn.style.display = 'block';
+            foundAnomalyBtn.style.display = 'none';
+            stopAnomalyBtn.style.display = 'none';
+        }
+        
+        // Функция для остановки поиска аномалий
+        function stopAnomalySearch() {
+            // Удаляем маркер аномалии
+            if (anomalyMarker) {
+                map.removeLayer(anomalyMarker);
+                anomalyMarker = null;
+            }
+            
+            // Переключаем кнопки
+            findAnomalyBtn.style.display = 'block';
+            foundAnomalyBtn.style.display = 'none';
+            stopAnomalyBtn.style.display = 'none';
+        }
+        
+        // Обработчики событий
+        refreshBtn.addEventListener('click', getCurrentLocation);
+        trackingBtn.addEventListener('click', toggleTracking);
+        
+        // Обработчики для модального окна аномалий
+        findAnomalyBtn.addEventListener('click', () => {
+            anomalyModal.classList.add('active');
+        });
+        
+        closeModalBtn.addEventListener('click', () => {
+            anomalyModal.classList.remove('active');
+        });
+        
+        cancelBtn.addEventListener('click', () => {
+            anomalyModal.classList.remove('active');
+        });
+        
+        startAnomalyBtn.addEventListener('click', startAnomalySearch);
+        
+        foundAnomalyBtn.addEventListener('click', markAnomalyAsFound);
+        stopAnomalyBtn.addEventListener('click', stopAnomalySearch);
+        
+        // Обработчики для выбора радиуса
+        radiusOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                // Убираем выделение со всех опций
+                radiusOptions.forEach(opt => opt.classList.remove('selected'));
+                // Выделяем выбранную опцию
+                option.classList.add('selected');
+                // Сохраняем выбранный радиус
+                selectedRadius = parseInt(option.getAttribute('data-radius'));
+            });
+        });
+        
+        // Обработчики для бокового меню
+        menuBtn.addEventListener('click', () => {
+            sideMenu.classList.add('active');
+        });
+        
+        closeMenuBtn.addEventListener('click', () => {
+            sideMenu.classList.remove('active');
+        });
+        
+        menuTrackingBtn.addEventListener('click', () => {
+            toggleTracking();
+            sideMenu.classList.remove('active');
+        });
+        
+        menuAboutBtn.addEventListener('click', () => {
+            alert('Opennatica - приложение для поиска аномалий\nВерсия 1.0\nРазработано для исследования местности');
+            sideMenu.classList.remove('active');
+        });
+        
+        // Выбираем опцию по умолчанию
+        radiusOptions[0].classList.add('selected');
+        
+        // Получение местоположения при загрузке страницы
+        window.addEventListener('load', getCurrentLocation);
+    </script>
+</body>
+</html>
