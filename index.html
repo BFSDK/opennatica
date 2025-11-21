@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Manifest для PWA -->
+    <!-- PWA мета-теги -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0a0a0a">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -184,6 +184,7 @@
         .icon {
             width: 20px;
             height: 20px;
+            filter: invert(1);
         }
         
         #bottom-panel {
@@ -404,6 +405,22 @@
             background: var(--success);
         }
         
+        /* Стили для кнопки установки */
+        #install-btn {
+            display: none;
+        }
+        
+        #install-btn.available {
+            display: flex;
+        }
+        
+        .install-icon {
+            margin-right: 8px;
+            width: 16px;
+            height: 16px;
+            filter: invert(1);
+        }
+        
         /* Модальное окно */
         #anomaly-modal {
             display: none;
@@ -585,22 +602,6 @@
             border: 3px solid white;
         }
         
-        /* Стили для установки приложения */
-        #install-btn {
-            display: none;
-        }
-        
-        #install-btn.available {
-            display: flex;
-        }
-        
-        .install-icon {
-            margin-right: 8px;
-            width: 16px;
-            height: 16px;
-            filter: invert(1);
-        }
-        
         @media (max-width: 768px) {
             #header {
                 padding: 8px 12px;
@@ -779,6 +780,19 @@
         const installBtn = document.getElementById('install-btn');
         const menuAboutBtn = document.getElementById('menu-about-btn');
         
+        // PWA: Регистрация Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('sw.js')
+                    .then(function(registration) {
+                        console.log('ServiceWorker зарегистрирован: ', registration.scope);
+                    })
+                    .catch(function(error) {
+                        console.log('Ошибка регистрации ServiceWorker: ', error);
+                    });
+            });
+        }
+        
         // PWA: Обработка установки приложения
         window.addEventListener('beforeinstallprompt', (e) => {
             // Предотвращаем автоматическое отображение подсказки
@@ -787,6 +801,7 @@
             deferredPrompt = e;
             // Показываем кнопку установки
             installBtn.classList.add('available');
+            console.log('PWA можно установить');
         });
         
         // Обработчик нажатия на кнопку установки
@@ -798,6 +813,7 @@
                 const { outcome } = await deferredPrompt.userChoice;
                 if (outcome === 'accepted') {
                     console.log('Пользователь принял установку');
+                    alert('Приложение успешно установлено!');
                 } else {
                     console.log('Пользователь отклонил установку');
                 }
@@ -816,6 +832,14 @@
             deferredPrompt = null;
             installBtn.classList.remove('available');
         });
+        
+        // Для отладки - показываем кнопку установки через 3 секунды
+        setTimeout(() => {
+            if (!installBtn.classList.contains('available')) {
+                console.log('Кнопка установки показана для тестирования');
+                installBtn.classList.add('available');
+            }
+        }, 3000);
         
         // Функция для обновления карты
         function updateMap(lat, lng, accuracy) {
