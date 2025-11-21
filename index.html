@@ -184,7 +184,6 @@
         .icon {
             width: 20px;
             height: 20px;
-            filter: invert(1);
         }
         
         #bottom-panel {
@@ -669,16 +668,10 @@
         <h1>Opennatica</h1>
         <div id="header-controls">
             <button id="refresh-btn" class="btn" title="Обновить местоположение">
-                <!-- Иконка обновления -->
-                <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4C7.58 4 4.01 7.58 4.01 12C4.01 16.42 7.58 20 12 20C15.73 20 18.84 17.45 19.73 14H17.65C16.83 16.33 14.61 18 12 18C8.69 18 6 15.31 6 12C6 8.69 8.69 6 12 6C13.66 6 15.14 6.69 16.22 7.78L13 11H20V4L17.65 6.35Z" fill="currentColor"/>
-                </svg>
+                <img src="rel.png" class="icon" alt="Обновить">
             </button>
             <button id="tracking-btn" class="toggle-btn" title="Включить слежение">
-                <!-- Иконка слежения -->
-                <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 8C9.79 8 8 9.79 8 12C8 14.21 9.79 16 12 16C14.21 16 16 14.21 16 12C16 9.79 14.21 8 12 8ZM20.94 11C20.48 6.83 17.17 3.52 13 3.06V1H11V3.06C6.83 3.52 3.52 6.83 3.06 11H1V13H3.06C3.52 17.17 6.83 20.48 11 20.94V23H13V20.94C17.17 20.48 20.48 17.17 20.94 13H23V11H20.94ZM12 19C8.13 19 5 15.87 5 12C5 8.13 8.13 5 12 5C15.87 5 19 8.13 19 12C19 15.87 15.87 19 12 19Z" fill="currentColor"/>
-                </svg>
+                <img src="location.png" class="icon" alt="Слежение">
             </button>
         </div>
         <div id="tracking-status" class="hidden">Включите слежение для обновления местоположения!</div>
