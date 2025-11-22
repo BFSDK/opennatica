@@ -23,30 +23,37 @@
         }
         
         :root {
-            --bg-primary: #0a0a0a;
+            --bg-primary: rgb(3, 0, 29);
             --bg-secondary: #1a1a1a;
-            --bg-tertiary: #2a2a2a;
-            --bg-overlay: rgba(49, 49, 49, 0.8);
+            --bg-tertiary: #180052;
+            --bg-overlay: rgba(49, 49, 49, 0);
             --text-primary: #f0f0f0;
             --text-secondary: #b0b0b0;
-            --accent: #5d6afb;
+            --accent: #000c96;
             --accent-hover: #4a59e8;
-            --success: #00c897;
+            --success: #005319;
             --warning: #ffa726;
-            --error: #ff5252;
+            --error: #500000;
             --user-location: #2196f3;
             --anomaly: #ff5252;
         }
+
+        @font-face {
+            font-family: 'Prs';
+            src: url('productsans.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Prs', Tahoma, Geneva, Verdana, sans-serif;
             overflow: hidden;
             display: flex;
             flex-direction: column;
             height: 100vh;
             background-color: var(--bg-primary);
             color: var(--text-primary);
-            font-weight: 400;
+            font-weight: normal;
         }
         
         #header {
@@ -54,7 +61,6 @@
             backdrop-filter: blur(10px);
             color: var(--text-primary);
             padding: 10px 16px;
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
             z-index: 1000;
             display: flex;
             justify-content: space-between;
@@ -106,19 +112,44 @@
             filter: invert(1) hue-rotate(180deg) brightness(0.7) contrast(0.9);
         }
         
-        .btn {
+        .btn-he {
             padding: 8px;
             background-color: var(--bg-tertiary);
             color: var(--text-primary);
             border: none;
-            border-radius: 0;
             cursor: pointer;
+            border-top-left-radius: 100px;     /* Левый верхний */
+            border-top-right-radius: 10px;    /* Правый верхний */
+            border-bottom-left-radius: 100px;  /* Левый нижний */
+            border-bottom-right-radius: 10px; /* Правый нижний */
             font-weight: 500;
             transition: all 1s cubic-bezier(0.08, 0.92, 0.08, 0.92);
             font-size: 14px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             font-family: 'Segoe UI', sans-serif;
-            width: 36px;
+            width: 50px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 8px;
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: none;
+            cursor: pointer;
+            border-top-left-radius: 100px;     /* Левый верхний */
+            border-top-right-radius: 100px;    /* Правый верхний */
+            border-bottom-left-radius: 100px;  /* Левый нижний */
+            border-bottom-right-radius: 100px; /* Правый нижний */
+            font-weight: 500;
+            transition: all 1s cubic-bezier(0.08, 0.92, 0.08, 0.92);
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            font-family: 'Prs', sans-serif;
+            width: 50px;
             height: 36px;
             display: flex;
             align-items: center;
@@ -127,8 +158,6 @@
         
         .btn:hover {
             background-color: var(--accent);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(93, 106, 251, 0.4);
         }
         
         .btn:active {
@@ -151,20 +180,18 @@
             background: var(--bg-tertiary);
             color: var(--text-primary);
             border: none;
-            border-radius: 0;
             cursor: pointer;
             font-weight: 500;
             font-size: 14px;
             transition: all 1s cubic-bezier(0.08, 0.92, 0.08, 0.92);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             font-family: 'Segoe UI', sans-serif;
-            width: 36px;
+            border-radius: 3px;
+            width: 50px;
             height: 36px;
         }
         
         .toggle-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
             background: var(--success);
         }
         
@@ -174,11 +201,10 @@
         
         .toggle-btn.tracking {
             background: var(--error);
-            box-shadow: 0 4px 12px rgba(255, 82, 82, 0.4);
         }
         
         .toggle-btn.tracking:hover {
-            box-shadow: 0 6px 16px rgba(255, 82, 82, 0.5);
+            background-color: #005319;
         }
         
         .icon {
@@ -190,7 +216,6 @@
             background: var(--bg-overlay);
             backdrop-filter: blur(10px);
             padding: 16px;
-            box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.5);
             z-index: 1000;
             display: flex;
             justify-content: center;
@@ -204,7 +229,7 @@
             background: var(--bg-tertiary);
             color: var(--text-primary);
             border: none;
-            border-radius: 0;
+            border-radius: 1000px;
             font-weight: 600;
             font-size: 15px;
             cursor: pointer;
@@ -213,17 +238,15 @@
             flex: 1;
             max-width: 300px;
             letter-spacing: 0.2px;
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Prs', sans-serif;
         }
         
         #find-anomaly-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
             background: var(--accent);
         }
         
         #find-anomaly-btn:active {
-            transform: translateY(-1px);
+            background-color: var(--bg-secondary);
         }
         
         #found-anomaly-btn, #stop-anomaly-btn {
@@ -239,22 +262,29 @@
             max-width: 300px;
             letter-spacing: 0.2px;
             display: none;
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Prs', sans-serif;
         }
         
         #found-anomaly-btn {
             background: var(--success);
-            box-shadow: 0 6px 20px rgba(0, 200, 151, 0.4);
+            border-top-left-radius: 20px;     /* Левый верхний */
+            border-top-right-radius: 20px;    /* Правый верхний */
+            border-bottom-left-radius: 5px;  /* Левый нижний */
+            border-bottom-right-radius: 5px; /* Правый нижний */
+            color: white;
         }
         
         #found-anomaly-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(0, 200, 151, 0.5);
+            background-color: #180052;
         }
         
         #stop-anomaly-btn {
             background: var(--error);
-            box-shadow: 0 6px 20px rgba(255, 82, 82, 0.4);
+            border-top-left-radius: 5px;     /* Левый верхний */
+            border-top-right-radius: 5px;    /* Правый верхний */
+            border-bottom-left-radius: 20px;  /* Левый нижний */
+            border-bottom-right-radius: 20px; /* Правый нижний */
+            color: white;
         }
         
         #stop-anomaly-btn:hover {
@@ -274,10 +304,13 @@
             font-size: 18px;
             cursor: pointer;
             padding: 8px;
-            border-radius: 0;
+            border-top-left-radius: 10px;     /* Левый верхний */
+            border-top-right-radius: 100px;    /* Правый верхний */
+            border-bottom-left-radius: 10px;  /* Левый нижний */
+            border-bottom-right-radius: 100px; /* Правый нижний */
             transition: all 1s cubic-bezier(0.08, 0.92, 0.08, 0.92);
-            width: 36px;
-            height: 36px;
+            width: 50px;
+            height: 34px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -297,10 +330,9 @@
             width: 320px;
             height: 100%;
             background: var(--bg-overlay);
-            backdrop-filter: blur(10px);
-            box-shadow: -2px 0 20px rgba(0, 0, 0, 0.5);
+            background-color: var(--bg-primary);
             z-index: 2000;
-            transition: all 1s cubic-bezier(0.08, 0.92, 0.08, 0.92);
+            transition: all 0.5s ease-in-out;
             display: flex;
             flex-direction: column;
             padding: 20px;
@@ -315,15 +347,14 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid var(--bg-tertiary);
+            margin-bottom: 18px;
+            padding-bottom: 0px;
         }
         
         .menu-header h2 {
             color: var(--text-primary);
-            font-size: 18px;
-            font-weight: 600;
+            font-size: 30px;
+            font-weight: normal;
             letter-spacing: -0.5px;
         }
         
@@ -336,7 +367,7 @@
             line-height: 1;
             width: 36px;
             height: 36px;
-            border-radius: 0;
+            border-radius: 100px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -373,7 +404,7 @@
             background: var(--bg-tertiary);
             color: var(--text-primary);
             border: none;
-            border-radius: 0;
+            border-radius: 100px;
             text-align: left;
             cursor: pointer;
             transition: all 1s cubic-bezier(0.08, 0.92, 0.08, 0.92);
@@ -417,7 +448,6 @@
             margin-right: 8px;
             width: 16px;
             height: 16px;
-            filter: invert(1);
         }
         
         /* Модальное окно */
@@ -428,11 +458,10 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(10, 10, 10, 0.9);
+            background-color: rgba(10, 10, 10, 0.3);
             z-index: 2000;
             justify-content: center;
             align-items: center;
-            backdrop-filter: blur(10px);
             transition: all 1s cubic-bezier(0.08, 0.92, 0.08, 0.92);
         }
         
@@ -441,14 +470,11 @@
         }
         
         .modal-content {
-            background: var(--bg-overlay);
-            backdrop-filter: blur(10px);
+            background: var(--bg-primary);
             padding: 25px;
-            border-radius: 0;
+            border-radius: 25px;
             width: 90%;
             max-width: 380px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
-            border: 1px solid var(--bg-tertiary);
             transition: all 1s cubic-bezier(0.08, 0.92, 0.08, 0.92);
         }
         
@@ -457,14 +483,13 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 18px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--bg-tertiary);
+            padding-bottom: 0px;
         }
         
         .modal-header h2 {
             color: var(--text-primary);
-            font-size: 20px;
-            font-weight: 600;
+            font-size: 30px;
+            font-weight: normal;
             letter-spacing: -0.5px;
         }
         
@@ -477,7 +502,7 @@
             line-height: 1;
             width: 36px;
             height: 36px;
-            border-radius: 0;
+            border-radius: 100px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -487,13 +512,12 @@
         .close-btn:hover {
             background: var(--accent);
             color: var(--text-primary);
-            transform: translateY(-2px);
         }
         
         .modal-description {
-            color: var(--text-secondary);
+            color: var(--text-primary);
             margin-bottom: 22px;
-            font-size: 14px;
+            font-size: 15px;
             line-height: 1.5;
         }
         
@@ -511,20 +535,17 @@
             border-radius: 0;
             text-align: center;
             cursor: pointer;
+            border-radius: 100px;
             transition: all 1s cubic-bezier(0.08, 0.92, 0.08, 0.92);
-            font-weight: 500;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            font-weight: normal;
         }
         
         .radius-option:hover {
-            background: var(--bg-primary);
-            transform: translateY(-2px);
+            background: var(--user-location);
         }
         
         .radius-option.selected {
-            border-color: var(--accent);
-            background: var(--bg-primary);
-            box-shadow: 0 6px 16px rgba(93, 106, 251, 0.4);
+            background: var(--accent);
         }
         
         .modal-actions {
@@ -617,7 +638,7 @@
             }
             
             .btn, .toggle-btn {
-                width: 34px;
+                width: 50px;
                 height: 34px;
                 padding: 7px;
             }
@@ -664,14 +685,16 @@
 </head>
 <body>
     <div id="header">
-        <button id="menu-btn">☰</button>
         <h1>Opennatica</h1>
         <div id="header-controls">
-            <button id="refresh-btn" class="btn" title="Обновить местоположение">
+            <button id="refresh-btn" class="btn-he" title="Обновить местоположение">
                 <img src="rel.png" class="icon" alt="Обновить">
             </button>
             <button id="tracking-btn" class="toggle-btn" title="Включить слежение">
                 <img src="location.png" class="icon" alt="Слежение">
+            </button>
+            <button id="menu-btn">
+                ☰
             </button>
         </div>
         <div id="tracking-status" class="hidden">Включите слежение для обновления местоположения!</div>
